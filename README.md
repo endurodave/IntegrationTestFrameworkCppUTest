@@ -128,60 +128,60 @@ The `Write` test is shown below. Notice the `Write` function is called, then the
 // Logger callback handler function invoked from Logger thread context
 void LoggerStatusCb(const string& status)
 {
-	// Protect callbackStatus against multiple thread access by IntegrationTest 
-	// thread and Logger thread
-	lock_guard<mutex> lock(mtx);
+    // Protect callbackStatus against multiple thread access by IntegrationTest 
+    // thread and Logger thread
+    lock_guard<mutex> lock(mtx);
 
-	// Save logger callback status
-	callbackStatus.push_back(status);
+    // Save logger callback status
+    callbackStatus.push_back(status);
 
-	// Signal the waiting thread to continue
-	signalThread.SetSignal();
+    // Signal the waiting thread to continue
+    signalThread.SetSignal();
 }
 
 // Test group setup/teardown
 TEST_GROUP(Logger_IT)
 {
-	void setup() override
-	{
-		// Optional setup before each test
-		Logger::GetInstance().SetCallback(&LoggerStatusCb);
-	}
+    void setup() override
+    {
+        // Optional setup before each test
+        Logger::GetInstance().SetCallback(&LoggerStatusCb);
+    }
 
-	void teardown() override
-	{
-		// Cleanup after each test
-		Logger::GetInstance().SetCallback(nullptr);
+    void teardown() override
+    {
+        // Cleanup after each test
+        Logger::GetInstance().SetCallback(nullptr);
 
-		callbackStatus.clear(); // Clear the callback status for next test
-		callbackStatus.shrink_to_fit();  // Prevent memory leak test failing
-	}
+        callbackStatus.clear(); // Clear the callback status for next test
+        callbackStatus.shrink_to_fit();  // Prevent memory leak test failing
+    }
 };
 
 TEST(Logger_IT, Write)
 {
-	// Write a Logger string value using public API
-	Logger::GetInstance().Write("LoggerTest, Write");
+    // Write a Logger string value using public API
+    Logger::GetInstance().Write("LoggerTest, Write");
 
-	// Wait for LoggerStatusCb callback up to 500ms
-	bool success = signalThread.WaitForSignal(500);
-	CHECK_TRUE(success);
+    // Wait for LoggerStatusCb callback up to 500ms
+    bool success = signalThread.WaitForSignal(500);
+    CHECK_TRUE(success);
 
-	// Wait for 2nd LoggerStatusCb callback up to 2 seconds
-	bool success2 = signalThread.WaitForSignal(2000);
-	CHECK_TRUE(success2);
+    // Wait for 2nd LoggerStatusCb callback up to 2 seconds
+    bool success2 = signalThread.WaitForSignal(2000);
+    CHECK_TRUE(success2);
 
-	{
-		std::lock_guard<std::mutex> lock(mtx);
+    {
+        std::lock_guard<std::mutex> lock(mtx);
 
-		CHECK_EQUAL(2, (int)callbackStatus.size());
+        CHECK_EQUAL(2, (int)callbackStatus.size());
 
-		if (callbackStatus.size() >= 2)
-		{
-			STRCMP_EQUAL("Write success!", callbackStatus[0].c_str());
-			STRCMP_EQUAL("Flush success!", callbackStatus[1].c_str());
-		}
-	}
+        if (callbackStatus.size() >= 2)
+        {
+            STRCMP_EQUAL("Write success!", callbackStatus[0].c_str());
+            STRCMP_EQUAL("Flush success!", callbackStatus[1].c_str());
+        }
+    }
 }
 ```
 
@@ -198,22 +198,22 @@ The `Flush` integration test is an example of targeting a non-thread safe subsys
 // However, the DelegateMQ library easily calls functions on the Logger thread context.
 TEST(Logger_IT, Flush)
 {
-	// Create an asynchronous blocking delegate targeted at the LogData::Flush function
-	auto flushAsyncBlockingDelegate = MakeDelegate(
-		&Logger::GetInstance().m_logData,	// LogData object within Logger class
-		&LogData::Flush,					// LogData function to invoke
-		Logger::GetInstance(),				// Thread to invoke Flush (Logger is-a Thread)
-		milliseconds(100));					// Wait up to 100mS for Flush function to be called
+    // Create an asynchronous blocking delegate targeted at the LogData::Flush function
+    auto flushAsyncBlockingDelegate = MakeDelegate(
+        &Logger::GetInstance().m_logData,	// LogData object within Logger class
+        &LogData::Flush,					// LogData function to invoke
+        Logger::GetInstance(),				// Thread to invoke Flush (Logger is-a Thread)
+        milliseconds(100));					// Wait up to 100mS for Flush function to be called
 
-	// Invoke LogData::Flush on the Logger thread and obtain the return value
-	std::optional<bool> retVal = flushAsyncBlockingDelegate.AsyncInvoke();
+    // Invoke LogData::Flush on the Logger thread and obtain the return value
+    std::optional<bool> retVal = flushAsyncBlockingDelegate.AsyncInvoke();
 
-	// Check test results
-	CHECK_TRUE(retVal.has_value());       // Did async LogData::Flush function call succeed?
-	if (retVal.has_value())
-	{
-		CHECK_TRUE(retVal.value());       // Did LogData::Flush return true?
-	}
+    // Check test results
+    CHECK_TRUE(retVal.has_value());       // Did async LogData::Flush function call succeed?
+    if (retVal.has_value())
+    {
+        CHECK_TRUE(retVal.value());       // Did LogData::Flush return true?
+    }
 }
 ```
 
@@ -282,66 +282,66 @@ void FlushTimeCb(milliseconds duration)
 // Test LogData::Flush executes in under 10mS
 TEST(Logger_IT, FlushTime)
 {
-	{
-		// Protect access to flushDuration
-		std::lock_guard<std::mutex> lock(mtx);
-		flushDuration = std::chrono::milliseconds(-1);
-	}
+    {
+        // Protect access to flushDuration
+        std::lock_guard<std::mutex> lock(mtx);
+        flushDuration = std::chrono::milliseconds(-1);
+    }
 
-	// Register for a callback from Logger thread
-	Logger::GetInstance().m_logData.FlushTimeDelegate += MakeDelegate(&FlushTimeCb);
+    // Register for a callback from Logger thread
+    Logger::GetInstance().m_logData.FlushTimeDelegate += MakeDelegate(&FlushTimeCb);
 
-	// Clear the m_msgData list on Logger thread
-	auto retVal1 = MakeDelegate(
-		&Logger::GetInstance().m_logData.m_msgData,    // Object instance
-		&std::list<std::string>::clear,                // Object function
-		Logger::GetInstance(),                         // Thread to invoke object function
-		std::chrono::milliseconds(50)).AsyncInvoke();
+    // Clear the m_msgData list on Logger thread
+    auto retVal1 = MakeDelegate(
+        &Logger::GetInstance().m_logData.m_msgData,    // Object instance
+        &std::list<std::string>::clear,                // Object function
+        Logger::GetInstance(),                         // Thread to invoke object function
+        std::chrono::milliseconds(50)).AsyncInvoke();
 
-	// Check asynchronous function call succeeded
-	CHECK_TRUE(retVal1.has_value());
+    // Check asynchronous function call succeeded
+    CHECK_TRUE(retVal1.has_value());
 
-	// Write 10 lines of log data
-	for (int i = 0; i < 10; i++)
-	{
-		auto retVal = MakeDelegate(
-			&Logger::GetInstance().m_logData,
-			&LogData::Write,
-			Logger::GetInstance(),
-			std::chrono::milliseconds(50)).AsyncInvoke("Flush Timer String");
+    // Write 10 lines of log data
+    for (int i = 0; i < 10; i++)
+    {
+        auto retVal = MakeDelegate(
+            &Logger::GetInstance().m_logData,
+            &LogData::Write,
+            Logger::GetInstance(),
+            std::chrono::milliseconds(50)).AsyncInvoke("Flush Timer String");
 
-		CHECK_TRUE(retVal.has_value());
+        CHECK_TRUE(retVal.has_value());
 
-		if (retVal.has_value())
-		{
-			CHECK_TRUE(retVal.value());
-		}
-	}
+        if (retVal.has_value())
+        {
+            CHECK_TRUE(retVal.value());
+        }
+    }
 
-	// Call LogData::Flush on Logger thread
-	auto retVal2 = MakeDelegate(
-		&Logger::GetInstance().m_logData,
-		&LogData::Flush,
-		Logger::GetInstance(),
-		std::chrono::milliseconds(100)).AsyncInvoke();
+    // Call LogData::Flush on Logger thread
+    auto retVal2 = MakeDelegate(
+        &Logger::GetInstance().m_logData,
+        &LogData::Flush,
+        Logger::GetInstance(),
+        std::chrono::milliseconds(100)).AsyncInvoke();
 
-	CHECK_TRUE(retVal2.has_value());
-	if (retVal2.has_value())
-	{
-		CHECK_TRUE(retVal2.value());
-	}
+    CHECK_TRUE(retVal2.has_value());
+    if (retVal2.has_value())
+    {
+        CHECK_TRUE(retVal2.value());
+    }
 
-	{
-		// Protect access to flushDuration
-		std::lock_guard<std::mutex> lock(mtx);
+    {
+        // Protect access to flushDuration
+        std::lock_guard<std::mutex> lock(mtx);
 
-		// Check that flush executed in 10ms or less
-		CHECK(flushDuration >= std::chrono::milliseconds(0));
-		CHECK(flushDuration <= std::chrono::milliseconds(10));
-	}
+        // Check that flush executed in 10ms or less
+        CHECK(flushDuration >= std::chrono::milliseconds(0));
+        CHECK(flushDuration <= std::chrono::milliseconds(10));
+    }
 
-	// Unregister from callback
-	Logger::GetInstance().m_logData.FlushTimeDelegate -= MakeDelegate(&FlushTimeCb);
+    // Unregister from callback
+    Logger::GetInstance().m_logData.FlushTimeDelegate -= MakeDelegate(&FlushTimeCb);
 }
 ```
 
@@ -353,55 +353,55 @@ The `FlushTestSimplified` example is identical to the previous test but uses the
 // to simplify syntax and automatically check for async invoke errors.
 TEST(Logger_IT, FlushTimeSimplified)
 {
-	{
-		// Protect access to flushDuration
-		std::lock_guard<std::mutex> lock(mtx);
-		flushDuration = std::chrono::milliseconds(-1);
-	}
+    {
+        // Protect access to flushDuration
+        std::lock_guard<std::mutex> lock(mtx);
+        flushDuration = std::chrono::milliseconds(-1);
+    }
 
-	// Register for a callback from Logger thread
-	Logger::GetInstance().m_logData.FlushTimeDelegate += MakeDelegate(&FlushTimeCb);
+    // Register for a callback from Logger thread
+    Logger::GetInstance().m_logData.FlushTimeDelegate += MakeDelegate(&FlushTimeCb);
 
-	// Clear the m_msgData list on Logger thread
-	auto retVal1 = AsyncInvoke(
-		&Logger::GetInstance().m_logData.m_msgData,   // Object instance
-		&std::list<std::string>::clear,              // Object function
-		Logger::GetInstance(),                       // Thread to invoke object function
-		std::chrono::milliseconds(50));              // Wait up to 50ms
+    // Clear the m_msgData list on Logger thread
+    auto retVal1 = AsyncInvoke(
+        &Logger::GetInstance().m_logData.m_msgData,   // Object instance
+        &std::list<std::string>::clear,              // Object function
+        Logger::GetInstance(),                       // Thread to invoke object function
+        std::chrono::milliseconds(50));              // Wait up to 50ms
 
-	// Write 10 lines of log data
-	for (int i = 0; i < 10; i++)
-	{
-		auto retVal = AsyncInvoke(
-			&Logger::GetInstance().m_logData,
-			&LogData::Write,
-			Logger::GetInstance(),
-			std::chrono::milliseconds(50),
-			"Flush Timer String");
+    // Write 10 lines of log data
+    for (int i = 0; i < 10; i++)
+    {
+        auto retVal = AsyncInvoke(
+            &Logger::GetInstance().m_logData,
+            &LogData::Write,
+            Logger::GetInstance(),
+            std::chrono::milliseconds(50),
+            "Flush Timer String");
 
-		if (retVal.has_value())
-		{
-			CHECK_TRUE(retVal.value());
-		}
-	}
+        if (retVal.has_value())
+        {
+            CHECK_TRUE(retVal.value());
+        }
+    }
 
-	// Call LogData::Flush on Logger thread
-	auto retVal2 = AsyncInvoke(
-		&Logger::GetInstance().m_logData,
-		&LogData::Flush,
-		Logger::GetInstance(),
-		std::chrono::milliseconds(100));
+    // Call LogData::Flush on Logger thread
+    auto retVal2 = AsyncInvoke(
+        &Logger::GetInstance().m_logData,
+        &LogData::Flush,
+        Logger::GetInstance(),
+        std::chrono::milliseconds(100));
 
-	{
-		std::lock_guard<std::mutex> lock(mtx);
+    {
+        std::lock_guard<std::mutex> lock(mtx);
 
-		// Check that flush executed in 10ms or less
-		CHECK(flushDuration >= std::chrono::milliseconds(0));
-		CHECK(flushDuration <= std::chrono::milliseconds(10));
-	}
+        // Check that flush executed in 10ms or less
+        CHECK(flushDuration >= std::chrono::milliseconds(0));
+        CHECK(flushDuration <= std::chrono::milliseconds(10));
+    }
 
-	// Unregister from callback
-	Logger::GetInstance().m_logData.FlushTimeDelegate -= MakeDelegate(&FlushTimeCb);
+    // Unregister from callback
+    Logger::GetInstance().m_logData.FlushTimeDelegate -= MakeDelegate(&FlushTimeCb);
 }
 ```
 
@@ -413,20 +413,20 @@ The `FlushTestSimplifiedWithLambda` example is identical to the previous test bu
 // function to centralize the callback inside the test case. 
 TEST(Logger_IT, FlushTimeSimplifiedWithLambda)
 {
-	// Logger callback handler lambda function invoked from Logger thread context
-	auto FlushTimeLambdaCb = +[](std::chrono::milliseconds duration) -> void
-		{
-			std::lock_guard<std::mutex> lock(mtx);
-			flushDuration = duration;
-		};
+    // Logger callback handler lambda function invoked from Logger thread context
+    auto FlushTimeLambdaCb = +[](std::chrono::milliseconds duration) -> void
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            flushDuration = duration;
+        };
 
-	{
-		std::lock_guard<std::mutex> lock(mtx);
-		flushDuration = std::chrono::milliseconds(-1);
-	}
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        flushDuration = std::chrono::milliseconds(-1);
+    }
 
-	// Register for a callback from Logger thread
-	Logger::GetInstance().m_logData.FlushTimeDelegate += MakeDelegate(FlushTimeLambdaCb);
+    // Register for a callback from Logger thread
+    Logger::GetInstance().m_logData.FlushTimeDelegate += MakeDelegate(FlushTimeLambdaCb);
 
     // etc...
 ```
@@ -557,17 +557,17 @@ The production code can utilize any thread implementation. The only requirement 
 class IThread
 {
 public:
-	/// Destructor
-	virtual ~IThread() = default;
+    /// Destructor
+    virtual ~IThread() = default;
 
-	/// Dispatch a `DelegateMsg` onto this thread. The implementer is responsible for
-	/// getting the `DelegateMsg` into an OS message queue. Once `DelegateMsg` is
-	/// on the destination thread of control, the `IInvoker::Invoke()` function
-	/// must be called to execute the target function.
-	/// @param[in] msg A shared pointer to the message.
-	/// @post The destination thread calls `IThreadInvoker::Invoke()` when `DelegateMsg`
-	/// is received.
-	virtual void DispatchDelegate(std::shared_ptr<DelegateMsg> msg) = 0;
+    /// Dispatch a `DelegateMsg` onto this thread. The implementer is responsible for
+    /// getting the `DelegateMsg` into an OS message queue. Once `DelegateMsg` is
+    /// on the destination thread of control, the `IInvoker::Invoke()` function
+    /// must be called to execute the target function.
+    /// @param[in] msg A shared pointer to the message.
+    /// @post The destination thread calls `IThreadInvoker::Invoke()` when `DelegateMsg`
+    /// is received.
+    virtual void DispatchDelegate(std::shared_ptr<DelegateMsg> msg) = 0;
 };
 ```
 
@@ -614,17 +614,17 @@ The integration tests are executed on the `IntegrationTest` thread.
 ```cpp
 void IntegrationTest::Run()
 {
-	m_timer.Stop();
+    m_timer.Stop();
 
-	int ac = 0;
+    int ac = 0;
     char** av = 0;
 
-	// Run all tests and return the result
-	int retVal = RUN_ALL_TESTS(ac, av);
+    // Run all tests and return the result
+    int retVal = RUN_ALL_TESTS(ac, av);
 
-	std::cout << "RUN_ALL_TESTS() return value: " << retVal << std::endl;
+    std::cout << "RUN_ALL_TESTS() return value: " << retVal << std::endl;
 
-	m_complete = true;
+    m_complete = true;
 }
 ```
 
