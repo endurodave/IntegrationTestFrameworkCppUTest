@@ -1,13 +1,13 @@
-// @see https://github.com/endurodave/IntegrationTestFramework
-// David Lafreniere, Oct 2024.
+// @see https://github.com/endurodave/IntegrationTestFrameworkCppUTest
+// David Lafreniere, July 2025.
 //
 // The integration test framework relies upon two external libraries.
 // 
 // CppUTest: 
 // https://github.com/cpputest/cpputest
 // 
-// Asynchronous Multicast Delgates: 
-// https://github.com/endurodave/AsyncMulticastDelegateModern
+// Asynchronous Multicast Delegates: 
+// https://github.com/endurodave/DelegateMQ
 //
 // See CMakeLists.txt for build instructions.
 // 
