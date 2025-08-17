@@ -19,6 +19,7 @@ See [IntegrationTestFramework](https://github.com/endurodave/IntegrationTestFram
 - [Source Code](#source-code)
 - [Logger Subsystem](#logger-subsystem)
 - [Testing Strategy](#testing-strategy)
+  - [CppUTest Global State Warning](#cpputest-global-state-warning)
 - [Delegates](#delegates)
 - [Integration Tests](#integration-tests)
   - [Write Test](#write-test)
@@ -104,6 +105,19 @@ In my experience with medical device design, integration testing was typically p
 While unit tests are typically executed off-target, the integration test framework presented here runs on-target, in parallel with normal device operation. The target device may be Windows, Linux or an embedded system. The tests can be executed in a special maintenance mode, when the system is idle, or alongside normal operations. Regardless of the mode, the tests run directly on the device, with results captured accordingly. In some cases, the test results are sent to an external logging machine via Ethernet or serial ports. In this project, the results are output to the screen.
 
 As more integration tests are created, the product's executable image size increases. To manage this, the tests are distributed across multiple images, each with a specific purpose. For example, one image might test a logging subsystem, while another tests the alarm subsystem. Distributing the integration tests across multiple builds helps keep the image size manageable on memory constrained devices.
+
+## CppUTest Global State Warning
+
+CppUTest was designed for a single-threaded environment. Its global state structures are not thread-safe, so CppUTest APIs must only be invoked from the `IntegrationTest` thread. Production code and callbacks into integration test modules must not call any CppUTest APIs. 
+
+- Memory leak detector (global new/delete and malloc/free overrides)
+- Current test and test result tracking
+- Mock framework (default instance)
+- Test plugins
+- Command-line/test selection state
+- Test output and reporting
+
+To prevent cross-thread interference, the memory leak detector should be disabled (`MemoryLeakWarningPlugin::turnOffNewDeleteOverloads()`). All other CppUTest features can be used safely provided they are invoked only from the `IntegrationTest` thread (e.g., code inside test macros such as `TEST`, `TEST_GROUP`, and their associated setup/teardown).
 
 # Delegates
 The DelegateMQ library offers both synchronous and asynchronous function invocation, typically utilized in two design patterns:
