@@ -1,6 +1,5 @@
 # Example CMake command line to create project build files:
 #
-# *** Windows ***
 # cmake -B Build . -DENABLE_IT=ON
 
 # Specify the minimum CMake version required

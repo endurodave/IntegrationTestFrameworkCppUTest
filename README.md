@@ -7,7 +7,10 @@
 
 An integration test framework used for testing multi-threaded C++ based projects using [CppUTest](https://github.com/cpputest/cpputest) and [DelegateMQ](https://github.com/endurodave/DelegateMQ) C++ asynchronous delegate libraries. All target devices are supported including Windows, Linux, and embedded systems.
 
-See [IntegrationTestFramework](https://github.com/endurodave/IntegrationTestFramework) for alternate Google Test and delegates implementation.
+See alternative implementations using different test frameworks:
+
+* [IntegrationTestFramework](https://github.com/endurodave/IntegrationTestFramework) - Google Test implementation.
+* [IntegrationTestFrameworkCppUTest](https://github.com/endurodave/IntegrationTestFrameworkDoctest) - doctest implementation.
 
 # Table of Contents
 
@@ -51,6 +54,7 @@ This project implements an integration testing framework for multi-threaded C++ 
 * [CppUTest](https://github.com/cpputest/cpputest) - CppUTest is a C++ unit testing framework that provides an API for writing and running unit tests.
 * [DelegateMQ](https://github.com/endurodave/DelegateMQ) - The DelegateMQ C++ library can invoke any callable function synchronously, asynchronously, or on a remote endpoint.
 * [IntegrationTestFramework](https://github.com/endurodave/IntegrationTestFramework) - Integration test framework using Google Test and delegates.
+* [IntegrationTestFrameworkDoctest](https://github.com/endurodave/IntegrationTestFrameworkDoctest) - Integration test framework using doctest and delegates.
 
 # Getting Started
 [CMake](https://cmake.org/) is used to create the project build files. See `CMakeLists.txt` for more information.

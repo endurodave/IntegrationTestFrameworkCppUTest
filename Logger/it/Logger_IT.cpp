@@ -1,11 +1,11 @@
 // Integration tests for the Logger subsystem
 // 
-// @see https://github.com/endurodave/IntegrationTestFramework
+// @see https://github.com/endurodave/IntegrationTestFrameworkCppUTest
 // David Lafreniere, Oct 2024.
 //
 // All tests run within the IntegrationTest thread context. Logger subsystem runs 
 // within the Logger thread context. The Delegate library is used to invoke 
-// functions across thread boundaries. The Google Test library is used to execute 
+// functions across thread boundaries. The CppUTest library is used to execute 
 // tests and collect results.
 
 #include "Logger.h"

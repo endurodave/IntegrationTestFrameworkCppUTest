@@ -8,7 +8,7 @@
 #include <atomic>
 
 // The IntegrationTest class executes all integration tests created using the 
-// Google Test framework on a private internal thread of control. 
+// CppUTest framework on a private internal thread of control. 
 class IntegrationTest
 {
 public:
@@ -25,7 +25,7 @@ private:
     // Called to run all integration tests
     void Run();
 
-    // The integration test worker thread that executes Google Test
+    // The integration test worker thread that executes CppUTest
     Thread m_thread;
 
     // Timer to start integration tests
