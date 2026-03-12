@@ -22,6 +22,12 @@ include("${CMAKE_SOURCE_DIR}/DelegateMQ/DelegateMQ.cmake")
 set (ENABLE_IT "ON")
 add_compile_definitions(IT_ENABLE)
 
+# Disable CppUTest memory leak detection globally. Must be set before add_executable
+# and add_subdirectory(CppUTest) so all targets — including the CppUTest library itself —
+# are compiled with detection off. Mixed allocators (CppUTest tracked new vs standard
+# delete) cause read-access-violation crashes at runtime.
+add_compile_definitions(CPPUTEST_USE_MEM_LEAK_DETECTION=0)
+
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -71,8 +77,6 @@ if (ENABLE_IT)
     add_subdirectory(Logger/it)
     add_subdirectory(IntegrationTest)
     add_subdirectory(CppUTest)
-
-    add_compile_definitions(CPPUTEST_USE_MEM_LEAK_DETECTION=0)
 endif()
 
 target_link_libraries(IntegrationTestFrameworkApp PRIVATE 

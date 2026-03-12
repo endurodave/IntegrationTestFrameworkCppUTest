@@ -1,7 +1,5 @@
 #include "IntegrationTest.h"
 #include "Logger.h"
-#include "CppUTest/MemoryLeakDetectorMallocMacros.h"
-#include "CppUTest/MemoryLeakDetectorNewMacros.h"
 
 // Prevent conflict with GoogleTest ASSERT_TRUE macro definition
 #ifdef ASSERT_TRUE
@@ -27,9 +25,9 @@ IntegrationTest::IntegrationTest() :
 {
     m_thread.CreateThread();
 
-    // Start integration tests 500mS after system startup. Alteratively, 
+    // Start integration tests 500mS after system startup. Alteratively,
     // create your own worker thread and call Run() directly.
-    (*m_timer.OnExpired) += MakeDelegate(this, &IntegrationTest::Run, m_thread);
+    m_timerConnection = m_timer.OnExpired.Connect(MakeDelegate(this, &IntegrationTest::Run, m_thread));
     m_timer.Start(std::chrono::milliseconds(500));
 }
 
@@ -38,7 +36,7 @@ IntegrationTest::IntegrationTest() :
 //----------------------------------------------------------------------------
 IntegrationTest::~IntegrationTest()
 {
-    (*m_timer.OnExpired) -= MakeDelegate(this, &IntegrationTest::Run, m_thread);
+    m_timerConnection.Disconnect();
 }
 
 //----------------------------------------------------------------------------
