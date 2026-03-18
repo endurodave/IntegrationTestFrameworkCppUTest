@@ -38,6 +38,7 @@ public:
 
 #ifdef IT_ENABLE
     virtual void DispatchDelegate(std::shared_ptr<dmq::DelegateMsg> msg);
+    virtual bool IsCurrentThread() { return GetCurrentThreadId() == GetThreadId(); }
 #endif
 
 private:
