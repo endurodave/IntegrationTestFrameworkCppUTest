@@ -26,10 +26,10 @@ private:
     void Run();
 
     // The integration test worker thread that executes CppUTest
-    Thread m_thread;
+    dmq::os::Thread m_thread;
 
     // Timer to start integration tests
-    Timer m_timer;
+    dmq::util::Timer m_timer;
 
     // RAII connection handle for m_timer.OnExpired
     dmq::ScopedConnection m_timerConnection;
